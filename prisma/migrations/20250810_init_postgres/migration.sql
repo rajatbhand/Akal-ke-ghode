@@ -1,4 +1,4 @@
-﻿-- CreateSchema
+﻿-- CreateSchema (postgres)
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateEnum
