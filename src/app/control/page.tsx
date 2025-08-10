@@ -55,7 +55,7 @@ export default function ControlPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 space-y-6">
+    <div className="min-h-screen p-6 space-y-6 container">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">Control Panel</h1>
         {/* Header controls: Round, Active Team, Overlays */}
