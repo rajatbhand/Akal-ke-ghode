@@ -1,3 +1,30 @@
+# Showrunner
+
+## Deploy to Vercel (Postgres + Pusher)
+
+1) Create a Postgres database (Vercel Postgres/Neon) and get the connection string.
+   - Set `DATABASE_URL` in Vercel Project → Settings → Environment Variables.
+
+2) Create a Pusher app and set:
+   - `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`
+   - `NEXT_PUBLIC_PUSHER_KEY`, `NEXT_PUBLIC_PUSHER_CLUSTER` (same key/cluster)
+
+3) On first deploy, run DB migrations against Postgres:
+   - Locally (with DATABASE_URL set to Postgres):
+     ```bash
+     npx prisma migrate deploy
+     ```
+   - Or add a Vercel deploy hook/command to run `prisma migrate deploy`.
+
+4) Routes to share:
+   - `/display` (big screen)
+   - `/control` (operator)
+   - `/audience` (public QR link)
+
+Notes:
+- Dev uses Socket.IO; prod uses Pusher for realtime.
+- Audience voting is a simple OPEN/CLOSED toggle; one submission per phone.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

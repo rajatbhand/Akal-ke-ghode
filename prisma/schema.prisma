@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core enums
+enum TeamId {
+  R
+  G
+  B
+}
+
+enum Attribution {
+  R
+  G
+  B
+  Host
+  Neutral
+}
+
+// Core models
+model Team {
+  id       TeamId  @id
+  name     String
+  colorHex String
+
+  // Relations
+  audience AudienceMember[]
+  adjustments ScoreAdjustment[]
+}
+
+model Question {
+  id           String  @id
+  text         String
+  answerCount  Int
+  isFinalRound Boolean @default(false)
+
+  answers Answer[]
+  reveals Reveal[]
+}
+
+model Answer {
+  questionId String
+  index      Int
+  text       String
+  value      Int // integers only (no paise)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, index])
+}
+
+model Reveal {
+  id          Int          @id @default(autoincrement())
+  questionId  String
+  answerIndex Int
+  attribution Attribution
+  roundNumber Int          @default(0)
+  createdAt   DateTime     @default(now())
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model GameState {
+  id                Int      @id @default(1)
+  currentRound      Int      @default(0)
+  currentQuestionId String?
+  r3AnswerCount     Int      @default(4) // 4 or 6, chosen before Round 3
+  timerSetting      Int?               // 45/52/60/90/120 (visual only)
+  finalBonus        Int      @default(0)
+  activeTeam        TeamId?
+  logoOnly          Boolean  @default(false)
+  bigX              Boolean  @default(false)
+  scorecardOverlay  Boolean  @default(false)
+  round2BonusApplied Boolean @default(false)
+
+  // Audience selection window management
+  // 0 = closed, 1 = Window 1 open, 2 = Window 2 open
+  audienceWindow Int @default(0)
+}
+
+model ScoreAdjustment {
+  id        Int     @id @default(autoincrement())
+  team      TeamId
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+
+  teamRef Team @relation(fields: [team], references: [id])
+}
+
+model AudienceMember {
+  id          Int     @id @default(autoincrement())
+  name        String
+  phone       String  @unique
+  team        TeamId
+  windowNumber Int    // 1 or 2 (first-time submissions only in Window 2 if they missed W1)
+  createdAt   DateTime @default(now())
+
+  teamRef Team @relation(fields: [team], references: [id])
+}

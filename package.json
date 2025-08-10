@@ -3,25 +3,37 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma:seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@prisma/client": "^6.13.0",
+    "csv-parse": "^6.1.0",
+    "next": "15.4.6",
+    "pg": "^8.16.3",
+    "prisma": "^6.13.0",
+    "pusher": "^5.2.0",
+    "pusher-js": "^8.4.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.4.6"
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "sqlite3": "^5.1.7",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
   }
 }
