@@ -108,8 +108,9 @@ export default function ControlPage() {
                   setLocalActive(t as any);
                   if (t !== 'Host') {
                     await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: t }) });
-                    const s = await fetch("/api/state").then((r)=>r.json());
-                    setState(s);
+                  } else {
+                    // Set activeTeam to null for Host
+                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: null }) });
                   }
                 }}
               >{t}</button>

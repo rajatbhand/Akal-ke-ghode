@@ -25,16 +25,24 @@ export default function DisplayPage() {
           setTeams(json.teams);
         }
         const s = await fetch("/api/state", { cache: "no-store" }).then((r) => r.json());
-        // bump detection
+        // bump detection - only for team reveals, not Host/Neutral
         const reveals = s?.question?.reveals ?? [];
         if (reveals.length > prevRevealCount) {
           const last = reveals.reduce((a: any, b: any) => (new Date(a.createdAt) > new Date(b.createdAt) ? a : b));
           const ans = s.question.answers.find((a: any) => a.index === last.answerIndex);
-          setBump({ team: last.attribution, amount: ans?.value ?? 0 });
-          setTimeout(() => setBump(null), 1200);
+          // Only show bump for actual team attributions (R, G, B) not Host/Neutral
+          if (last.attribution === 'R' || last.attribution === 'G' || last.attribution === 'B') {
+            setBump({ team: last.attribution, amount: ans?.value ?? 0 });
+            setTimeout(() => setBump(null), 1200);
+          }
         }
         setPrevRevealCount(reveals.length);
         setState(s);
+        
+        // Clear bump if Big X is showing to prevent interference
+        if (s?.state?.bigX) {
+          setBump(null);
+        }
       } catch (error) {
         console.error('Failed to load data:', error);
       }
