@@ -85,7 +85,7 @@ export default function ControlPage() {
 
           <div className="ml-3 flex items-center gap-1">
             <span className="text-sm opacity-70">Active</span>
-            {["R","G","B"].map((t)=> (
+            {["R","G","B","Host"].map((t)=> (
               <button
                 key={t}
                 className={`px-2 py-1 rounded ${state?.state?.activeTeam === t ? "bg-black text-white" : "border"}`}
@@ -117,6 +117,16 @@ export default function ControlPage() {
               }}
             >{state?.state?.scorecardOverlay ? "Hide Scorecard" : "Show Scorecard"}</button>
           </div>
+          <button
+            className="ml-4 px-3 py-1 border rounded"
+            onClick={async ()=>{
+              if (!confirm('Reset show? This clears reveals, scores, audience, and state.')) return;
+              await fetch('/api/admin/reset', { method: 'POST' });
+              const s = await fetch('/api/state').then(r=>r.json());
+              setState(s);
+              setPendingAdjust({ R:0, G:0, B:0 });
+            }}
+          >Reset Show</button>
         </div>
       </div>
       {/* Live scoreboard with totals (includes applied bonuses and manual adjustments) */}
