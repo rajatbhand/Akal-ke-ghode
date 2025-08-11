@@ -80,7 +80,7 @@ export async function GET() {
     }
 
     // Find current question with reveals - include full data
-    let currentQuestion = null;
+    let currentQuestion: any = null;
     if (gameState?.currentQuestionId) {
       currentQuestion = questions.find(q => q.id === gameState.currentQuestionId);
       // Include reveals in the question object for immediate display
@@ -100,11 +100,12 @@ export async function GET() {
       // Teams with dugout counts
       teams: teamsWithDugout,
       
-      // All questions
+      // All questions (debug: include count)
       questions: questions.map(q => ({
         id: q.id,
         text: q.text
       })),
+      questionCount: questions.length, // Debug info
       
       // Scores
       totals: { 

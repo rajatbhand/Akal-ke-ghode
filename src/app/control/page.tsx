@@ -95,6 +95,15 @@ export default function ControlPage() {
       const res = await fetch("/api/questions/import", { method: "POST", body: fd });
       const json = await res.json();
       setResult(JSON.stringify(json));
+      
+      // CRITICAL FIX: Reload dashboard data after successful import
+      if (json.imported && json.imported > 0) {
+        const dashboard = await fetch("/api/dashboard").then((r) => r.json()).catch(() => ({}));
+        if (dashboard.questions) {
+          setQuestions(dashboard.questions);
+          setResult(`✅ Successfully imported ${json.imported} questions! Dropdown updated.`);
+        }
+      }
     } catch (err: any) {
       setResult(String(err?.message || err));
     } finally {
@@ -269,6 +278,18 @@ export default function ControlPage() {
         
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-sm">Select Question:</label>
+          <button 
+            className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+            onClick={async () => {
+              const dashboard = await fetch("/api/dashboard").then((r) => r.json()).catch(() => ({}));
+              if (dashboard.questions) {
+                setQuestions(dashboard.questions);
+                setResult(`🔄 Refreshed: Found ${dashboard.questions.length} questions`);
+              }
+            }}
+          >
+            Refresh
+          </button>
           <select
             className="border p-2"
             value={state?.state?.currentQuestionId ?? ""}

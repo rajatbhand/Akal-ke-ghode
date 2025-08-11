@@ -68,7 +68,18 @@ export async function POST(req: Request) {
       importedIds.push(id);
     }
 
-    return NextResponse.json({ imported: importedIds.length, ids: importedIds });
+    // Verify all questions were actually saved
+    const savedQuestions = await prisma.question.findMany({
+      where: { id: { in: importedIds } },
+      select: { id: true, text: true }
+    });
+    
+    return NextResponse.json({ 
+      imported: importedIds.length, 
+      ids: importedIds,
+      verified: savedQuestions.length,
+      savedQuestions: savedQuestions.map(q => ({ id: q.id, text: q.text.substring(0, 50) + '...' }))
+    });
   } catch (err: any) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 });
   }
