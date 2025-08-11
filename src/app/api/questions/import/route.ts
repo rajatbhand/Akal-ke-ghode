@@ -37,34 +37,36 @@ export async function POST(req: Request) {
     const colIndex = (name: string) => header.indexOf(name);
     const importedIds: string[] = [];
 
-    await prisma.$transaction(async (tx) => {
-      for (let i = 1; i < records.length; i++) {
-        const row = records[i];
-        const id = String(row[colIndex("QuestionID")] || "").trim();
-        const text = String(row[colIndex("QuestionText")] || "").trim();
-        const answerCount = parseInt(String(row[colIndex("AnswerCount")] || "0"), 10) || 0;
-        if (!id || !text || answerCount <= 0) continue;
+    // Avoid interactive transactions (PgBouncer/Serverless). Do per-question atomic ops.
+    for (let i = 1; i < records.length; i++) {
+      const row = records[i];
+      const id = String(row[colIndex("QuestionID")] || "").trim();
+      const text = String(row[colIndex("QuestionText")] || "").trim();
+      const answerCount = parseInt(String(row[colIndex("AnswerCount")] || "0"), 10) || 0;
+      if (!id || !text || answerCount <= 0) continue;
 
-        await tx.question.upsert({
-          where: { id },
-          update: { text, answerCount },
-          create: { id, text, answerCount },
-        });
+      await prisma.question.upsert({
+        where: { id },
+        update: { text, answerCount },
+        create: { id, text, answerCount },
+      });
 
-        await tx.answer.deleteMany({ where: { questionId: id } });
+      await prisma.answer.deleteMany({ where: { questionId: id } });
 
-        for (let idx = 0; idx < answerCount; idx++) {
-          const a = String(row[colIndex(answerCols[idx])] || "").trim();
-          const v = parseInt(String(row[colIndex(valueCols[idx])] || "0"), 10) || 0;
-          if (!a) continue;
-          await tx.answer.create({
-            data: { questionId: id, index: idx + 1, text: a, value: v },
-          });
-        }
-
-        importedIds.push(id);
+      const toCreate: { questionId: string; index: number; text: string; value: number }[] = [];
+      for (let idx = 0; idx < answerCount; idx++) {
+        const a = String(row[colIndex(answerCols[idx])] || "").trim();
+        const v = parseInt(String(row[colIndex(valueCols[idx])] || "0"), 10) || 0;
+        if (!a) continue;
+        toCreate.push({ questionId: id, index: idx + 1, text: a, value: v });
       }
-    });
+      if (toCreate.length) {
+        // createMany is efficient and compatible with pooled connections
+        await prisma.answer.createMany({ data: toCreate });
+      }
+
+      importedIds.push(id);
+    }
 
     return NextResponse.json({ imported: importedIds.length, ids: importedIds });
   } catch (err: any) {
