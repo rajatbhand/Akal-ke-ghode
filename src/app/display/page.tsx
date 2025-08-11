@@ -61,7 +61,7 @@ export default function DisplayPage() {
       )}
       <ScoreRail teams={teams} state={state} />
       {state?.question ? (
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-5xl mx-auto px-6 mt-20">
           <div className="text-center text-xl font-semibold mb-4">{state.question.text}</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {state.question.answers.map((a: any) => {
@@ -84,7 +84,7 @@ export default function DisplayPage() {
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-center mt-10 opacity-70">No question loaded…</div>
+        <div className="flex items-center justify-center mt-24 opacity-70">No question loaded…</div>
       )}
 
       {/* Overlays */}
@@ -94,17 +94,9 @@ export default function DisplayPage() {
         </div>
       )}
       {state?.state?.scorecardOverlay && (
-        <div className="fixed inset-0 z-30 bg-black/80 flex items-center justify-center">
-          <div className="bg-white/10 border border-white/20 rounded p-8 min-w-[60%]">
-            <div className="text-center text-2xl font-bold mb-6">Scorecard</div>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              {teams.map((t) => (
-                <div key={t.id} className="p-4 rounded bg-white/5">
-                  <div className="text-xl font-semibold" style={{ color: t.colorHex }}>{t.name}</div>
-                  <div className="text-lg mt-2">Dugout: {t.dugout}</div>
-                </div>
-              ))}
-            </div>
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
+          <div className="w-[80%] max-w-5xl">
+            <ScoreRail teams={teams} state={state} />
           </div>
         </div>
       )}

@@ -22,6 +22,7 @@ export async function POST(req: Request) {
   // Create reveal with roundNumber from game state
   const r = await prisma.reveal.create({ data: { questionId, answerIndex, attribution, roundNumber } as any });
   emitBus({ type: 'reveal' });
+  emitBus({ type: 'scores:update' });
   return NextResponse.json({ ok: true, reveal: r });
 }
 
