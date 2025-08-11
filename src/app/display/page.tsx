@@ -68,7 +68,7 @@ export default function DisplayPage() {
       channel.bind('audience:update', refresh);
       return () => { channel.unbind_all(); channel.unsubscribe(); pusher.disconnect(); };
     }
-  }, []);
+  }, [prevRevealCount]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white font-bold">
@@ -99,48 +99,49 @@ export default function DisplayPage() {
           <div className="flex-1 flex items-center justify-center px-8">
             <div className="w-full max-w-7xl">
               <div className="grid grid-cols-2 gap-4">
-              {state.question.answers
-                .sort((a: any, b: any) => a.index - b.index) // Always display in Z-eye pattern order (1,2,3...)
-                .map((a: any, displayIndex: number) => {
-                const reveal = state.question.reveals?.find((r: any) => r.answerIndex === a.index);
-                const attributed = reveal?.attribution;
-                const teamColor = attributed && TEAM_COLORS[attributed] ? TEAM_COLORS[attributed] : "#6B7280"; // grey for Host
-                const revealed = Boolean(reveal);
-                
-                return (
-                  <div
-                    key={a.index}
-                    className={`relative bg-gray-800 border-4 rounded-lg shadow-xl transition-all duration-500`}
-                    style={{
-                      minHeight: "100px",
-                      borderColor: revealed ? teamColor : "#4B5563" // team color outline when revealed, grey when hidden
-                    }}
-                  >
-                    <div className="p-6 flex justify-between items-center h-full">
-                      <div className={`text-left flex-1 ${revealed ? "text-white" : "text-transparent"}`}>
-                        <div className={`text-lg md:text-xl font-black tracking-wide ${revealed ? "" : "blur-sm select-none"}`}>
-                          {revealed ? a.text.toUpperCase() : "████████████"}
+                {state.question.answers
+                  .sort((a: any, b: any) => a.index - b.index) // Always display in Z-eye pattern order (1,2,3...)
+                  .map((a: any, displayIndex: number) => {
+                  const reveal = state.question.reveals?.find((r: any) => r.answerIndex === a.index);
+                  const attributed = reveal?.attribution;
+                  const teamColor = attributed && TEAM_COLORS[attributed] ? TEAM_COLORS[attributed] : "#6B7280"; // grey for Host
+                  const revealed = Boolean(reveal);
+                  
+                  return (
+                    <div
+                      key={a.index}
+                      className={`relative bg-gray-800 border-4 rounded-lg shadow-xl transition-all duration-500`}
+                      style={{
+                        minHeight: "100px",
+                        borderColor: revealed ? teamColor : "#4B5563" // team color outline when revealed, grey when hidden
+                      }}
+                    >
+                      <div className="p-6 flex justify-between items-center h-full">
+                        <div className={`text-left flex-1 ${revealed ? "text-white" : "text-transparent"}`}>
+                          <div className={`text-lg md:text-xl font-black tracking-wide ${revealed ? "" : "blur-sm select-none"}`}>
+                            {revealed ? a.text.toUpperCase() : "████████████"}
+                          </div>
+                        </div>
+                        
+                        {/* Score display with neutral styling - larger for TV */}
+                        <div className={`text-right ${revealed ? "opacity-100" : "opacity-0"}`}>
+                          <div className="bg-white text-black px-4 py-2 rounded-full font-black text-xl border-2 border-gray-300">
+                            {revealed ? formatInr(a.value) : ""}
+                          </div>
                         </div>
                       </div>
                       
-                      {/* Score display with neutral styling - larger for TV */}
-                      <div className={`text-right ${revealed ? "opacity-100" : "opacity-0"}`}>
-                        <div className="bg-white text-black px-4 py-2 rounded-full font-black text-xl border-2 border-gray-300">
-                          {revealed ? formatInr(a.value) : ""}
-                        </div>
-                      </div>
+                      {/* Team attribution stripe at bottom */}
+                      {revealed && attributed && (
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 h-2 rounded-b-md"
+                          style={{ backgroundColor: teamColor }}
+                        />
+                      )}
                     </div>
-                    
-                    {/* Team attribution stripe at bottom */}
-                    {revealed && attributed && (
-                      <div 
-                        className="absolute bottom-0 left-0 right-0 h-2 rounded-b-md"
-                        style={{ backgroundColor: teamColor }}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -153,7 +154,7 @@ export default function DisplayPage() {
         </div>
       )}
 
-      {/* Family Feud style overlays */}
+      {/* Neutral style overlays */}
       {state?.state?.bigX && (
         <div className="fixed inset-0 z-40 bg-red-900/80 flex items-center justify-center">
           <div className="relative">
@@ -174,7 +175,7 @@ export default function DisplayPage() {
           </div>
         </div>
       )}
-      {/* Family Feud style score bump */}
+      {/* Neutral style score bump */}
       {bump && bump.amount > 0 && (bump.team === 'R' || bump.team === 'G' || bump.team === 'B') && (
         <div className="fixed inset-0 z-40 pointer-events-none flex items-center justify-center">
           <div className="relative">
@@ -263,5 +264,3 @@ function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
     </div>
   );
 }
-
-
