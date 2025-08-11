@@ -22,28 +22,34 @@ export default function ControlPage() {
 
   useEffect(() => {
     const load = async () => {
-      const w = await fetch("/api/audience/window").then((r) => r.json());
-      setWindow(w.window);
-      setLocalVoting(w.window > 0);
-      
-      const t = await fetch("/api/teams").then((r) => r.json());
-      setTeams(t.teams);
-      
-      const s = await fetch("/api/state").then((r) => r.json());
-      setState(s);
-      const activeTeam = s?.state?.activeTeam as 'R'|'G'|'B'|null;
-      setLocalActive(activeTeam === null ? 'Host' : activeTeam);
-      setLocalBigX(s?.state?.bigX ?? false);
-      setLocalScorecard(s?.state?.scorecardOverlay ?? false);
-      
-      const q = await fetch("/api/questions").then((r) => r.json());
-      setQuestions(q.questions ?? []);
-      
-      const p = await fetch("/api/round2/preview").then((r) => r.json()).catch(()=>null);
-      setR2Preview(p);
-      
-      const sc = await fetch("/api/scores").then((r) => r.json()).catch(()=>null);
-      if (sc?.totals) setTotals(sc.totals);
+      try {
+        // Single unified API call for maximum speed
+        const dashboard = await fetch("/api/dashboard").then((r) => r.json()).catch(() => ({
+          state: { state: null, question: null },
+          teams: [],
+          questions: [],
+          totals: { R: 0, G: 0, B: 0 },
+          window: 0,
+          r2Preview: null
+        }));
+
+        // Update all state from unified response
+        setWindow(dashboard.window);
+        setLocalVoting(dashboard.window > 0);
+        setTeams(dashboard.teams);
+        setState(dashboard.state);
+        
+        const activeTeam = dashboard.state?.state?.activeTeam as 'R'|'G'|'B'|null;
+        setLocalActive(activeTeam === null ? 'Host' : activeTeam);
+        setLocalBigX(dashboard.state?.state?.bigX ?? false);
+        setLocalScorecard(dashboard.state?.state?.scorecardOverlay ?? false);
+        
+        setQuestions(dashboard.questions ?? []);
+        setR2Preview(dashboard.r2Preview);
+        setTotals(dashboard.totals);
+      } catch (error) {
+        console.error('Failed to load control panel data:', error);
+      }
     };
     load();
     
