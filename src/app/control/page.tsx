@@ -13,26 +13,38 @@ export default function ControlPage() {
   const [pendingAdjust, setPendingAdjust] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
   const [r2Preview, setR2Preview] = useState<any>(null);
   const [totals, setTotals] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
+  // Local state for immediate UI feedback
+  const [localBigX, setLocalBigX] = useState<boolean>(false);
+  const [localScorecard, setLocalScorecard] = useState<boolean>(false);
+  const [localVoting, setLocalVoting] = useState<boolean>(false);
 
   useEffect(() => {
     const load = async () => {
       const w = await fetch("/api/audience/window").then((r) => r.json());
       setWindow(w.window);
+      setLocalVoting(w.window > 0);
+      
       const t = await fetch("/api/teams").then((r) => r.json());
       setTeams(t.teams);
+      
       const s = await fetch("/api/state").then((r) => r.json());
       setState(s);
       const active = (s?.state?.activeTeam as 'R'|'G'|'B'|null) ?? 'Host';
       setLocalActive(active === null ? 'Host' : active);
+      setLocalBigX(s?.state?.bigX ?? false);
+      setLocalScorecard(s?.state?.scorecardOverlay ?? false);
+      
       const q = await fetch("/api/questions").then((r) => r.json());
       setQuestions(q.questions ?? []);
+      
       const p = await fetch("/api/round2/preview").then((r) => r.json()).catch(()=>null);
       setR2Preview(p);
+      
       const sc = await fetch("/api/scores").then((r) => r.json()).catch(()=>null);
       if (sc?.totals) setTotals(sc.totals);
     };
     load();
-    const id = setInterval(load, 2000);
+    const id = setInterval(load, 3000); // Increased to 3s to reduce server load
     return () => clearInterval(id);
   }, []);
 
@@ -105,23 +117,40 @@ export default function ControlPage() {
           </div>
 
           <div className="ml-3 flex items-center gap-2">
-            <button
-              className="px-2 py-1 border rounded"
-              onClick={async ()=>{
-                const next = !state?.state?.bigX;
-                await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bigX: next }) });
-                const s = await fetch("/api/state").then((r)=>r.json());
-                setState(s);
-              }}
-            >{state?.state?.bigX ? "Hide Big X" : "Show Big X"}</button>
-            <button
-              className="px-2 py-1 border rounded"
-              onClick={async ()=>{
-                await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scorecardOverlay: !state?.state?.scorecardOverlay }) });
-                const s = await fetch("/api/state").then((r)=>r.json());
-                setState(s);
-              }}
-            >{state?.state?.scorecardOverlay ? "Hide Scorecard" : "Show Scorecard"}</button>
+            <label className="flex items-center gap-2">
+              <span>Big X:</span>
+              <button
+                className={`relative w-12 h-6 rounded-full transition-colors ${localBigX ? 'bg-red-600' : 'bg-gray-600'}`}
+                onClick={async () => {
+                  const newValue = !localBigX;
+                  setLocalBigX(newValue); // Optimistic update
+                  await fetch("/api/state", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ bigX: newValue }),
+                  });
+                }}
+              >
+                <div className={`absolute w-4 h-4 bg-white rounded-full top-1 transition-transform ${localBigX ? 'translate-x-7' : 'translate-x-1'}`} />
+              </button>
+            </label>
+            <label className="flex items-center gap-2">
+              <span>Scorecard:</span>
+              <button
+                className={`relative w-12 h-6 rounded-full transition-colors ${localScorecard ? 'bg-blue-600' : 'bg-gray-600'}`}
+                onClick={async () => {
+                  const newValue = !localScorecard;
+                  setLocalScorecard(newValue); // Optimistic update
+                  await fetch("/api/state", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ scorecardOverlay: newValue }),
+                  });
+                }}
+              >
+                <div className={`absolute w-4 h-4 bg-white rounded-full top-1 transition-transform ${localScorecard ? 'translate-x-7' : 'translate-x-1'}`} />
+              </button>
+            </label>
           </div>
           <button
             className="ml-4 px-3 py-1 border rounded"
@@ -168,16 +197,19 @@ export default function ControlPage() {
             <span className="text-sm opacity-70">Voting</span>
             <button
               role="switch"
-              aria-checked={window === 1}
-              className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${window === 1 ? 'bg-green-500' : 'bg-gray-300'}`}
+              aria-checked={localVoting}
+              className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${localVoting ? 'bg-green-500' : 'bg-gray-300'}`}
               onClick={async () => {
-                const next = window === 1 ? 0 : 1;
-                await fetch('/api/audience/window', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ window: next }) });
-                const w = await fetch('/api/audience/window').then(r=>r.json());
-                setWindow(w.window);
+                const newValue = !localVoting;
+                setLocalVoting(newValue); // Optimistic update
+                await fetch('/api/audience/window', { 
+                  method: 'POST', 
+                  headers: { 'Content-Type': 'application/json' }, 
+                  body: JSON.stringify({ window: newValue ? 1 : 0 }) 
+                });
               }}
             >
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${window === 1 ? 'translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${localVoting ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
             <span className={`text-xs px-2 py-1 rounded ${window === 1 ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-gray-100 text-gray-800 border border-gray-300'}`}>
               {window === 1 ? 'OPEN' : 'CLOSED'}

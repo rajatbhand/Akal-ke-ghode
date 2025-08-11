@@ -7,27 +7,37 @@ import PusherClient from 'pusher-js';
 type Team = { id: "R" | "G" | "B"; name: string; colorHex: string; dugout: number };
 
 export default function DisplayPage() {
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<Team[]>([
+    { id: "R", name: "Red Team", colorHex: "#FF3B30", dugout: 0 },
+    { id: "G", name: "Green Team", colorHex: "#34C759", dugout: 0 },
+    { id: "B", name: "Blue Team", colorHex: "#007AFF", dugout: 0 }
+  ]);
   const [state, setState] = useState<any>(null);
   const [bump, setBump] = useState<{ team: 'R'|'G'|'B'|'Host'|'Neutral'; amount: number }|null>(null);
   const [prevRevealCount, setPrevRevealCount] = useState<number>(0);
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch("/api/teams", { cache: "no-store" });
-      const json = await res.json();
-      setTeams(json.teams);
-      const s = await fetch("/api/state", { cache: "no-store" }).then((r) => r.json());
-      // bump detection
-      const reveals = s?.question?.reveals ?? [];
-      if (reveals.length > prevRevealCount) {
-        const last = reveals.reduce((a: any, b: any) => (new Date(a.createdAt) > new Date(b.createdAt) ? a : b));
-        const ans = s.question.answers.find((a: any) => a.index === last.answerIndex);
-        setBump({ team: last.attribution, amount: ans?.value ?? 0 });
-        setTimeout(() => setBump(null), 1200);
+      try {
+        const res = await fetch("/api/teams", { cache: "no-store" });
+        const json = await res.json();
+        if (json.teams && json.teams.length > 0) {
+          setTeams(json.teams);
+        }
+        const s = await fetch("/api/state", { cache: "no-store" }).then((r) => r.json());
+        // bump detection
+        const reveals = s?.question?.reveals ?? [];
+        if (reveals.length > prevRevealCount) {
+          const last = reveals.reduce((a: any, b: any) => (new Date(a.createdAt) > new Date(b.createdAt) ? a : b));
+          const ans = s.question.answers.find((a: any) => a.index === last.answerIndex);
+          setBump({ team: last.attribution, amount: ans?.value ?? 0 });
+          setTimeout(() => setBump(null), 1200);
+        }
+        setPrevRevealCount(reveals.length);
+        setState(s);
+      } catch (error) {
+        console.error('Failed to load data:', error);
       }
-      setPrevRevealCount(reveals.length);
-      setState(s);
     };
     load();
     const refresh = () => load();
@@ -60,7 +70,7 @@ export default function DisplayPage() {
         </div>
       )}
       {/* Fixed mini-score always visible */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-black/50 backdrop-blur-sm">
+      <div className="fixed top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-sm border-b border-white/20">
         <ScoreRail teams={teams} state={state} />
       </div>
       {state?.question ? (
@@ -121,8 +131,14 @@ function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
 
   useEffect(() => {
     const load = async () => {
-      const json = await fetch('/api/scores', { cache: 'no-store' }).then(r=>r.json());
-      setTotals(json.totals);
+      try {
+        const json = await fetch('/api/scores', { cache: 'no-store' }).then(r=>r.json());
+        if (json.totals) {
+          setTotals(json.totals);
+        }
+      } catch (error) {
+        console.error('Failed to load scores:', error);
+      }
     };
     load();
     const refresh = () => load();
@@ -146,17 +162,22 @@ function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
   }, []);
 
   return (
-    <div className="p-4 flex gap-6 justify-center">
+    <div className="p-3 flex gap-4 justify-center flex-wrap">
       {teams.map((t) => {
         const isActive = state?.state?.activeTeam === t.id;
+        const teamScore = t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B;
         return (
-          <div key={t.id} className={`flex items-center gap-3 px-3 py-1 rounded ${isActive ? 'ring-2 ring-yellow-400' : ''}`}>
-            <div className="text-2xl font-bold" style={{ color: t.colorHex }}>
+          <div key={t.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isActive ? 'ring-2 ring-yellow-400 border-yellow-400' : 'border-white/20'} bg-black/60`}>
+            <div className="text-lg font-bold" style={{ color: t.colorHex }}>
               {t.name}
             </div>
-            <div className="px-3 py-1 rounded bg-white/10">Dugout: {t.dugout}</div>
-            <div className="px-3 py-1 rounded bg-white/10">{formatInr(t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B)}</div>
-            {isActive && <div className="px-2 py-1 bg-yellow-500 text-black rounded">Turn</div>}
+            <div className="px-2 py-1 rounded bg-white/20 text-sm">
+              Dugout: {t.dugout}
+            </div>
+            <div className="px-2 py-1 rounded bg-white/20 text-sm font-semibold">
+              {formatInr(teamScore)}
+            </div>
+            {isActive && <div className="px-2 py-1 bg-yellow-500 text-black rounded text-sm font-bold">Turn</div>}
           </div>
         );
       })}
