@@ -94,8 +94,9 @@ export default function DisplayPage() {
         </div>
       )}
       {state?.state?.scorecardOverlay && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
-          <div className="w-[80%] max-w-5xl">
+        <div className="fixed inset-0 z-[999] bg-black/90 flex items-center justify-center">
+          <div className="w-[85%] max-w-6xl bg-white/10 border border-white/30 rounded-lg p-6">
+            <div className="text-center text-3xl font-bold mb-4">Scorecard</div>
             <ScoreRail teams={teams} state={state} />
           </div>
         </div>
