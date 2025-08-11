@@ -40,7 +40,7 @@ const customQuestions = [
     ]
   },
   {
-    id: 'Q4',
+    id: 'Q3',
     text: "I asked my bachelor friends, what's something they stole from their friend and never told them about?",
     answerCount: 6,
     answers: [
@@ -53,7 +53,7 @@ const customQuestions = [
     ]
   },
   {
-    id: 'Q5',
+    id: 'Q4',
     text: "I asked my bachelor friends, what's a fake excuse they might use to get out of a bad date?",
     answerCount: 6,
     answers: [
@@ -66,7 +66,7 @@ const customQuestions = [
     ]
   },
   {
-    id: 'Q6',
+    id: 'Q5',
     text: "I asked my bachelor friends, the last advice they took from ChatGPT?",
     answerCount: 6,
     answers: [
@@ -79,7 +79,7 @@ const customQuestions = [
     ]
   },
   {
-    id: 'Q7',
+    id: 'Q6',
     text: "I asked my bachelor friends, If your boss says \"you are fired\", what will you do?",
     answerCount: 13,
     answers: [
