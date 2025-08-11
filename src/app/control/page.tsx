@@ -200,6 +200,34 @@ export default function ControlPage() {
       <div className="flex gap-3 items-center flex-wrap">
         <a className="underline" href="/api/sample-csv">Download sample CSV</a>
         <button 
+          className="px-3 py-2 bg-purple-600 text-white rounded font-medium hover:bg-purple-700"
+          onClick={async () => {
+            setImporting(true);
+            setResult("Loading your custom questions from CSV...");
+            try {
+              const res = await fetch("/api/admin/load-custom-questions", { method: "POST" });
+              const json = await res.json();
+              if (json.success) {
+                setResult(json.message);
+                // Refresh questions list
+                const dashboard = await fetch("/api/dashboard").then((r) => r.json()).catch(() => ({}));
+                if (dashboard.questions) {
+                  setQuestions(dashboard.questions);
+                }
+              } else {
+                setResult(`Error: ${json.error}`);
+              }
+            } catch (error: any) {
+              setResult(`Error: ${error.message}`);
+            } finally {
+              setImporting(false);
+            }
+          }}
+          disabled={importing}
+        >
+          {importing ? "Loading..." : "Load YOUR CSV Questions"}
+        </button>
+        <button 
           className="px-3 py-2 bg-green-600 text-white rounded font-medium hover:bg-green-700"
           onClick={async () => {
             setImporting(true);
