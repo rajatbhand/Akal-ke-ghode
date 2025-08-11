@@ -79,10 +79,14 @@ export async function GET() {
       };
     }
 
-    // Find current question with reveals
+    // Find current question with reveals - include full data
     let currentQuestion = null;
     if (gameState?.currentQuestionId) {
       currentQuestion = questions.find(q => q.id === gameState.currentQuestionId);
+      // Include reveals in the question object for immediate display
+      if (currentQuestion) {
+        currentQuestion.reveals = reveals.filter(r => r.questionId === currentQuestion.id);
+      }
     }
 
     // Return unified response

@@ -39,8 +39,13 @@ export default function ControlPage() {
         setTeams(dashboard.teams);
         setState(dashboard.state);
         
+        // Only sync from server if we don't have a local override
         const activeTeam = dashboard.state?.state?.activeTeam as 'R'|'G'|'B'|null;
-        setLocalActive(activeTeam === null ? 'Host' : activeTeam);
+        const serverActive = activeTeam === null ? 'Host' : activeTeam;
+        // Only update if local hasn't been set by user interaction
+        if (localActive === 'Host' && serverActive !== 'Host') {
+          setLocalActive(serverActive);
+        }
         setLocalBigX(dashboard.state?.state?.bigX ?? false);
         setLocalScorecard(dashboard.state?.state?.scorecardOverlay ?? false);
         
@@ -268,12 +273,19 @@ export default function ControlPage() {
             className="border p-2"
             value={state?.state?.currentQuestionId ?? ""}
             onChange={async (e) => {
-              await fetch("/api/state", {
+              // IMMEDIATE UI feedback - don't wait for server
+              const newQuestionId = e.target.value || null;
+              setState((prev: any) => ({
+                ...prev,
+                state: { ...prev?.state, currentQuestionId: newQuestionId }
+              }));
+              
+              // Background API call
+              fetch("/api/state", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ currentQuestionId: e.target.value || null }),
-              });
-              // State will update via WebSocket automatically
+                body: JSON.stringify({ currentQuestionId: newQuestionId }),
+              }).catch(console.error);
             }}
           >
             <option value="">-- none --</option>
@@ -342,23 +354,40 @@ export default function ControlPage() {
                             : "bg-green-600 text-white hover:bg-green-700"
                         }`}
                         onClick={async () => {
+                          // IMMEDIATE UI feedback
+                          const currentReveals = state.question.reveals || [];
+                          
                           if (revealed) {
-                            // Unreveals answer
-                            await fetch("/api/reveal", {
+                            // Optimistically remove reveal
+                            const newReveals = currentReveals.filter((r: any) => r.answerIndex !== a.index);
+                            setState((prev: any) => ({
+                              ...prev,
+                              question: { ...prev.question, reveals: newReveals }
+                            }));
+                            
+                            // Background API call
+                            fetch("/api/reveal", {
                               method: "DELETE",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index }),
-                            });
+                            }).catch(console.error);
                           } else {
-                            // Reveal answer
+                            // Optimistically add reveal
                             const attribution = localActive ?? (state?.state?.activeTeam ?? "Host");
-                            await fetch("/api/reveal", {
+                            const newReveal = { questionId: state.question.id, answerIndex: a.index, attribution, createdAt: new Date().toISOString() };
+                            const newReveals = [...currentReveals, newReveal];
+                            setState((prev: any) => ({
+                              ...prev,
+                              question: { ...prev.question, reveals: newReveals }
+                            }));
+                            
+                            // Background API call
+                            fetch("/api/reveal", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index, attribution }),
-                            });
+                            }).catch(console.error);
                           }
-                          // State will update via WebSocket automatically
                         }}
                       >
                         {revealed ? "Hide" : "Reveal"}
