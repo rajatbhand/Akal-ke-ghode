@@ -8,6 +8,7 @@ export default function ControlPage() {
   const [window, setWindow] = useState<number>(0);
   const [teams, setTeams] = useState<any[]>([]);
   const [state, setState] = useState<any>(null);
+  const [localActive, setLocalActive] = useState<'R'|'G'|'B'|'Host'>('Host');
   const [questions, setQuestions] = useState<any[]>([]);
   const [pendingAdjust, setPendingAdjust] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
   const [r2Preview, setR2Preview] = useState<any>(null);
@@ -21,6 +22,8 @@ export default function ControlPage() {
       setTeams(t.teams);
       const s = await fetch("/api/state").then((r) => r.json());
       setState(s);
+      const active = (s?.state?.activeTeam as 'R'|'G'|'B'|null) ?? 'Host';
+      setLocalActive(active === null ? 'Host' : active);
       const q = await fetch("/api/questions").then((r) => r.json());
       setQuestions(q.questions ?? []);
       const p = await fetch("/api/round2/preview").then((r) => r.json()).catch(()=>null);
@@ -88,11 +91,14 @@ export default function ControlPage() {
             {["R","G","B","Host"].map((t)=> (
               <button
                 key={t}
-                className={`px-2 py-1 rounded ${state?.state?.activeTeam === t ? "bg-black text-white" : "border"}`}
+                className={`px-2 py-1 rounded ${localActive === t ? "bg-black text-white" : "border"}`}
                 onClick={async ()=>{
-                  await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: t }) });
-                  const s = await fetch("/api/state").then((r)=>r.json());
-                  setState(s);
+                  setLocalActive(t as any);
+                  if (t !== 'Host') {
+                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: t }) });
+                    const s = await fetch("/api/state").then((r)=>r.json());
+                    setState(s);
+                  }
                 }}
               >{t}</button>
             ))}
@@ -221,7 +227,7 @@ export default function ControlPage() {
                     className={`p-2 border rounded text-left ${revealed ? "opacity-50" : ""}`}
                     disabled={revealed}
                     onClick={async () => {
-                      const attribution = state?.state?.activeTeam ?? "Host";
+                      const attribution = localActive ?? (state?.state?.activeTeam ?? "Host");
                       await fetch("/api/reveal", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
