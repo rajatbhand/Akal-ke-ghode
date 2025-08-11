@@ -59,9 +59,12 @@ export default function DisplayPage() {
           <div className="text-4xl font-bold">LOGO</div>
         </div>
       )}
-      <ScoreRail teams={teams} state={state} />
+      {/* Fixed mini-score always visible */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-black/50 backdrop-blur-sm">
+        <ScoreRail teams={teams} state={state} />
+      </div>
       {state?.question ? (
-        <div className="max-w-5xl mx-auto px-6 mt-20">
+        <div className="max-w-5xl mx-auto px-6 mt-24">
           <div className="text-center text-xl font-semibold mb-4">{state.question.text}</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {state.question.answers.map((a: any) => {
