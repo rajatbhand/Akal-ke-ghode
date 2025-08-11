@@ -25,7 +25,7 @@ const customQuestions = [
   {
     id: 'Q2',
     text: "I asked my bachelor friends, what's something that they tried to get their partner in the mood but failed?",
-    answerCount: 10,
+    answerCount: 10, // FIXED: Actually has 10 answers, not 6 as CSV says
     answers: [
       { index: 1, text: 'Aromatic Senses: Trying to pleasure their nose with lavender candles.', value: 2000 },
       { index: 2, text: 'Cooking: Claimed to have coocked the food myself but forgot to remove Zomato tape', value: 2000 },
