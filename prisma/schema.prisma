@@ -68,6 +68,11 @@ model Reveal {
   createdAt   DateTime     @default(now())
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  // Performance indexes
+  @@index([questionId, answerIndex]) // Fast lookups for reveal checks
+  @@index([createdAt]) // Fast ordering for latest reveals
+  @@index([roundNumber]) // Fast Round 2 bonus calculations
 }
 
 model GameState {

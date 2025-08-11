@@ -15,18 +15,29 @@ export default function DisplayPage() {
   const [state, setState] = useState<any>(null);
   const [bump, setBump] = useState<{ team: 'R'|'G'|'B'|'Host'|'Neutral'; amount: number }|null>(null);
   const [prevRevealCount, setPrevRevealCount] = useState<number>(0);
+  const [totals, setTotals] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch("/api/teams", { cache: "no-store" });
-        const json = await res.json();
-        if (json.teams && json.teams.length > 0) {
-          setTeams(json.teams);
+        // Single optimized API call - much faster than separate calls
+        const dashboard = await fetch("/api/dashboard", { cache: "no-store" }).then((r) => r.json());
+        
+        // Update teams with dugout counts
+        if (dashboard.teams && dashboard.teams.length > 0) {
+          setTeams(dashboard.teams);
         }
-        const s = await fetch("/api/state", { cache: "no-store" }).then((r) => r.json());
-        // bump detection - only for new team reveals, not on general reloads
+        
+        // Update totals from dashboard
+        if (dashboard.totals) {
+          setTotals(dashboard.totals);
+        }
+        
+        // Update state
+        const s = dashboard.state;
         const reveals = s?.question?.reveals ?? [];
+        
+        // bump detection - only for new team reveals, not on general reloads
         if (reveals.length > prevRevealCount && prevRevealCount > 0) { // Only if we had previous data
           const last = reveals.reduce((a: any, b: any) => (new Date(a.createdAt) > new Date(b.createdAt) ? a : b));
           const ans = s.question.answers.find((a: any) => a.index === last.answerIndex);
@@ -80,18 +91,18 @@ export default function DisplayPage() {
       
       {/* Fixed bigger scoreboard - positioned on right side, responsive */}
       <div className="fixed top-0 right-0 z-40 bg-gradient-to-b from-gray-800 via-gray-700 to-gray-800 border-l-4 border-b-4 border-purple-600 shadow-lg rounded-bl-lg hidden sm:block">
-        <ScoreRail teams={teams} state={state} />
+        <ScoreRail teams={teams} state={state} totals={totals} />
       </div>
       
       {/* Mobile scoreboard - top center for small screens */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 border-b-4 border-purple-600 shadow-lg sm:hidden">
-        <ScoreRailMobile teams={teams} state={state} />
+        <ScoreRailMobile teams={teams} state={state} totals={totals} />
       </div>
       
       {state?.question ? (
         <div className="pt-20 sm:pt-4 pb-6 pr-0 sm:pr-80 min-h-screen flex flex-col">
-          {/* Question header - responsive */}
-          <div className="text-center mb-4 sm:mb-6 px-4 sm:px-6 lg:px-8">
+          {/* Question header - responsive with reduced gap */}
+          <div className="text-center mb-2 sm:mb-3 px-4 sm:px-6 lg:px-8">
             <div className="bg-gray-800 border-4 border-purple-500 rounded-lg mx-auto max-w-5xl p-3 sm:p-4 lg:p-6 shadow-2xl">
               <div className="text-purple-300 text-sm sm:text-base mb-1 tracking-wider">QUESTION</div>
               <div className="text-white text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black tracking-wide leading-tight">
@@ -175,7 +186,7 @@ export default function DisplayPage() {
               📊 FINAL SCORECARD 📊
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
-              <ScoreRail teams={teams} state={state} />
+              <ScoreRail teams={teams} state={state} totals={totals} />
             </div>
           </div>
         </div>
@@ -200,15 +211,21 @@ export default function DisplayPage() {
   );
 }
 
-function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
-  const [totals, setTotals] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
+function ScoreRail({ teams, state, totals }: { teams: Team[]; state: any; totals?: { R: number; G: number; B: number } }) {
+  const [localTotals, setLocalTotals] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
 
+  // Use passed totals if available, otherwise fetch separately (fallback)
   useEffect(() => {
+    if (totals) {
+      setLocalTotals(totals);
+      return;
+    }
+    
     const load = async () => {
       try {
         const json = await fetch('/api/scores', { cache: 'no-store' }).then(r=>r.json());
         if (json.totals) {
-          setTotals(json.totals);
+          setLocalTotals(json.totals);
         }
       } catch (error) {
         console.error('Failed to load scores:', error);
@@ -233,13 +250,13 @@ function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
       channel.bind('audience:update', refresh);
       return () => { channel.unbind_all(); channel.unsubscribe(); pusher.disconnect(); };
     }
-  }, []);
+  }, [totals]);
 
   return (
     <div className="p-4 flex flex-col gap-4 min-w-[300px]">
       {teams.map((t) => {
         const isActive = state?.state?.activeTeam === t.id;
-        const teamScore = t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B;
+        const teamScore = t.id === 'R' ? localTotals.R : t.id === 'G' ? localTotals.G : localTotals.B;
         return (
           <div key={t.id} className={`relative ${isActive ? 'transform scale-105' : ''} transition-all duration-300`}>
             {/* Bigger horizontal team display */}
@@ -272,15 +289,21 @@ function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
   );
 }
 
-function ScoreRailMobile({ teams, state }: { teams: Team[]; state: any }) {
-  const [totals, setTotals] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
+function ScoreRailMobile({ teams, state, totals }: { teams: Team[]; state: any; totals?: { R: number; G: number; B: number } }) {
+  const [localTotals, setLocalTotals] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
 
+  // Use passed totals if available, otherwise fetch separately (fallback)
   useEffect(() => {
+    if (totals) {
+      setLocalTotals(totals);
+      return;
+    }
+    
     const load = async () => {
       try {
         const json = await fetch('/api/scores', { cache: 'no-store' }).then(r=>r.json());
         if (json.totals) {
-          setTotals(json.totals);
+          setLocalTotals(json.totals);
         }
       } catch (error) {
         console.error('Failed to load scores:', error);
@@ -305,13 +328,13 @@ function ScoreRailMobile({ teams, state }: { teams: Team[]; state: any }) {
       channel.bind('audience:update', refresh);
       return () => { channel.unbind_all(); channel.unsubscribe(); pusher.disconnect(); };
     }
-  }, []);
+  }, [totals]);
 
   return (
     <div className="p-2 flex gap-1 justify-center overflow-x-auto">
       {teams.map((t) => {
         const isActive = state?.state?.activeTeam === t.id;
-        const teamScore = t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B;
+        const teamScore = t.id === 'R' ? localTotals.R : t.id === 'G' ? localTotals.G : localTotals.B;
         return (
           <div key={t.id} className={`relative flex-shrink-0 ${isActive ? 'transform scale-105' : ''} transition-all duration-300`}>
             {/* Compact mobile team display */}
@@ -325,7 +348,7 @@ function ScoreRailMobile({ teams, state }: { teams: Team[]; state: any }) {
                     {t.dugout}
                   </div>
                   <div className="bg-purple-600 text-white px-1 py-0.5 rounded text-xs font-bold">
-                    ₹{Math.round(teamScore/1000)}k
+                    ₹{Math.round(localTotals[t.id as keyof typeof localTotals]/1000)}k
                   </div>
                 </div>
                 {isActive && (

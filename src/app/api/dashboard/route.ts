@@ -6,19 +6,18 @@ export const dynamic = "force-dynamic";
 // Unified dashboard API to reduce network round-trips
 export async function GET() {
   try {
-    // Fetch all data in parallel from database
-    const [gameState, teams, questions, reveals, adjustments, audienceWindow, audienceMembers] = await Promise.all([
+    // Fetch all data in parallel from database - optimized queries
+    const [gameState, teams, questions, reveals, adjustments, audienceMembers] = await Promise.all([
       prisma.gameState.findFirst(),
       prisma.team.findMany({ orderBy: { id: "asc" } }),
       prisma.question.findMany({ 
         include: { 
           answers: { orderBy: { index: "asc" } },
-          reveals: true 
+          reveals: { orderBy: { createdAt: "desc" } } // Most recent first for performance
         }
       }),
-      prisma.reveal.findMany(),
+      prisma.reveal.findMany({ orderBy: { createdAt: "desc" } }), // Most recent first
       prisma.scoreAdjustment.findMany(),
-      prisma.gameState.findFirst().then(gs => ({ window: gs?.audienceWindow ?? 0 })),
       prisma.audienceMember.groupBy({
         by: ["team"],
         _count: { team: true },
