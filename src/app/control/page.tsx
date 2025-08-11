@@ -290,40 +290,81 @@ export default function ControlPage() {
         {state?.question && (
           <div className="mt-4 space-y-2">
             <div className="font-medium">{state.question.text}</div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-3">
               {state.question.answers.map((a: any) => {
                 const revealed = state.question.reveals?.some((r: any) => r.answerIndex === a.index);
                 return (
-                  <button
-                    key={a.index}
-                    className={`p-2 border rounded text-left transition-all ${
-                      revealed 
-                        ? "bg-green-100 border-green-500 text-green-800" 
-                        : "hover:bg-gray-50"
-                    }`}
-                    onClick={async () => {
-                      if (revealed) {
-                        // Unreveals answer
-                        await fetch("/api/reveal", {
-                          method: "DELETE",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index }),
-                        });
-                      } else {
-                        // Reveal answer
-                        const attribution = localActive ?? (state?.state?.activeTeam ?? "Host");
-                        await fetch("/api/reveal", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index, attribution }),
-                        });
-                      }
-                      // State will update via WebSocket automatically
-                    }}
-                  >
-                    <div className="text-xs opacity-60">#{a.index}</div>
-                    <div className="font-medium">{a.text}</div>
-                  </button>
+                  <div key={a.index} className={`p-3 border rounded transition-all ${
+                    revealed 
+                      ? "bg-green-100 border-green-500" 
+                      : "bg-gray-50"
+                  }`}>
+                    <div className="flex items-center justify-between gap-3">
+                      {/* Answer text */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs opacity-60">#{a.index}</span>
+                          <span className="font-medium">{a.text}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Amount input field */}
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-gray-600">₹</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1000"
+                          className="w-24 px-2 py-1 border rounded text-sm"
+                          defaultValue={a.value}
+                          onBlur={async (e) => {
+                            const newValue = parseInt(e.target.value) || 0;
+                            if (newValue !== a.value) {
+                              await fetch("/api/answers/update", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ 
+                                  questionId: state.question.id, 
+                                  answerIndex: a.index, 
+                                  value: newValue 
+                                }),
+                              });
+                            }
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Reveal/Hide button */}
+                      <button
+                        className={`px-3 py-1 rounded text-sm font-medium ${
+                          revealed 
+                            ? "bg-red-600 text-white hover:bg-red-700" 
+                            : "bg-green-600 text-white hover:bg-green-700"
+                        }`}
+                        onClick={async () => {
+                          if (revealed) {
+                            // Unreveals answer
+                            await fetch("/api/reveal", {
+                              method: "DELETE",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index }),
+                            });
+                          } else {
+                            // Reveal answer
+                            const attribution = localActive ?? (state?.state?.activeTeam ?? "Host");
+                            await fetch("/api/reveal", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index, attribution }),
+                            });
+                          }
+                          // State will update via WebSocket automatically
+                        }}
+                      >
+                        {revealed ? "Hide" : "Reveal"}
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -361,24 +402,66 @@ export default function ControlPage() {
                   )}
                 </div>
               ))}
-              {/* Round 2 bonus apply */}
-              <button
-                className="px-2 py-1 border rounded ml-2"
-                onClick={async () => {
-                  const res = await fetch("/api/round2/apply-bonus", { method: "POST" });
-                  const json = await res.json();
-                  setResult(JSON.stringify(json));
-                  // State will update via WebSocket automatically
-                }}
-              >
-                Apply R2 Bonus
-              </button>
-              {r2Preview?.round === 2 && (
-                <span className="text-xs ml-2 px-2 py-1 rounded bg-blue-50 border border-blue-200 text-blue-800">
-                  Preview: R {r2Preview.preview.R.count}→x{r2Preview.preview.R.multiplier} (bonus {r2Preview.preview.R.bonus}) · G {r2Preview.preview.G.count}→x{r2Preview.preview.G.multiplier} (bonus {r2Preview.preview.G.bonus}) · B {r2Preview.preview.B.count}→x{r2Preview.preview.B.multiplier} (bonus {r2Preview.preview.B.bonus})
-                </span>
-              )}
+
             </div>
+          </div>
+        )}
+        
+        {/* Manual Round 2 Bonus Section */}
+        {state?.state?.currentRound === 2 && !state?.state?.round2BonusApplied && (
+          <div className="mt-6 p-4 border rounded bg-blue-50">
+            <h3 className="text-lg font-semibold mb-3">Round 2 Manual Bonus</h3>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {["R", "G", "B"].map((team) => (
+                <div key={team} className="flex flex-col">
+                  <label className="text-sm font-medium mb-1">{team} Team Bonus:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    placeholder="0"
+                    className="px-3 py-2 border rounded"
+                    id={`r2-bonus-${team}`}
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={async () => {
+                const r = parseInt((document.getElementById('r2-bonus-R') as HTMLInputElement)?.value) || 0;
+                const g = parseInt((document.getElementById('r2-bonus-G') as HTMLInputElement)?.value) || 0;
+                const b = parseInt((document.getElementById('r2-bonus-B') as HTMLInputElement)?.value) || 0;
+                
+                if (r === 0 && g === 0 && b === 0) {
+                  alert('Please enter at least one bonus amount');
+                  return;
+                }
+                
+                if (!confirm(`Apply R2 bonuses: R ₹${r}, G ₹${g}, B ₹${b}?`)) return;
+                
+                const res = await fetch("/api/round2/manual-bonus", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ teamBonuses: { R: r, G: g, B: b } }),
+                });
+                
+                const json = await res.json();
+                if (json.ok) {
+                  setResult(`R2 Manual Bonus Applied: ${JSON.stringify(json.applied)}`);
+                } else {
+                  setResult(`Error: ${json.error}`);
+                }
+              }}
+            >
+              Apply Manual R2 Bonus
+            </button>
+          </div>
+        )}
+        
+        {state?.state?.round2BonusApplied && (
+          <div className="mt-4 p-3 border rounded bg-green-50 text-green-800">
+            ✅ Round 2 bonus has been applied
           </div>
         )}
       </div>

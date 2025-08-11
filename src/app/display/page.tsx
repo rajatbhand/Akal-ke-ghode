@@ -78,26 +78,27 @@ export default function DisplayPage() {
         </div>
       )}
       
-      {/* Fixed neutral scoreboard */}
+      {/* Fixed neutral scoreboard - optimized for 16:9 TV */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 border-b-4 border-purple-600 shadow-lg">
         <ScoreRail teams={teams} state={state} />
       </div>
       
       {state?.question ? (
-        <div className="pt-20 pb-8">
-          {/* Question header with neutral styling */}
-          <div className="text-center mb-8 px-6">
-            <div className="bg-gray-800 border-4 border-purple-500 rounded-lg mx-auto max-w-4xl p-6 shadow-2xl">
-              <div className="text-purple-300 text-lg mb-2 tracking-wider">QUESTION</div>
-              <div className="text-white text-2xl md:text-3xl font-black tracking-wide leading-tight">
+        <div className="pt-24 pb-6 min-h-screen flex flex-col">
+          {/* Question header - positioned for 16:9 TV */}
+          <div className="text-center mb-6 px-8">
+            <div className="bg-gray-800 border-4 border-purple-500 rounded-lg mx-auto max-w-5xl p-4 shadow-2xl">
+              <div className="text-purple-300 text-base mb-1 tracking-wider">QUESTION</div>
+              <div className="text-white text-xl md:text-2xl font-black tracking-wide leading-tight">
                 {state.question.text}
               </div>
             </div>
           </div>
           
-          {/* Answer board with team-colored outlines */}
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Answer board - optimized for 16:9 TV display */}
+          <div className="flex-1 flex items-center justify-center px-8">
+            <div className="w-full max-w-7xl">
+              <div className="grid grid-cols-2 gap-4">
               {state.question.answers
                 .sort((a: any, b: any) => a.index - b.index) // Always display in Z-eye pattern order (1,2,3...)
                 .map((a: any, displayIndex: number) => {
@@ -111,20 +112,20 @@ export default function DisplayPage() {
                     key={a.index}
                     className={`relative bg-gray-800 border-4 rounded-lg shadow-xl transition-all duration-500`}
                     style={{
-                      minHeight: "80px",
+                      minHeight: "100px",
                       borderColor: revealed ? teamColor : "#4B5563" // team color outline when revealed, grey when hidden
                     }}
                   >
-                    <div className="p-4 flex justify-between items-center h-full">
+                    <div className="p-6 flex justify-between items-center h-full">
                       <div className={`text-left flex-1 ${revealed ? "text-white" : "text-transparent"}`}>
                         <div className={`text-lg md:text-xl font-black tracking-wide ${revealed ? "" : "blur-sm select-none"}`}>
                           {revealed ? a.text.toUpperCase() : "████████████"}
                         </div>
                       </div>
                       
-                      {/* Score display with neutral styling */}
+                      {/* Score display with neutral styling - larger for TV */}
                       <div className={`text-right ${revealed ? "opacity-100" : "opacity-0"}`}>
-                        <div className="bg-white text-black px-3 py-1 rounded-full font-black text-lg border-2 border-gray-300">
+                        <div className="bg-white text-black px-4 py-2 rounded-full font-black text-xl border-2 border-gray-300">
                           {revealed ? formatInr(a.value) : ""}
                         </div>
                       </div>
