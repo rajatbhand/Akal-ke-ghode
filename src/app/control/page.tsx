@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { formatInr } from "@/lib/format";
+import { io, Socket } from 'socket.io-client';
+import PusherClient from 'pusher-js';
 
 export default function ControlPage() {
   const [importing, setImporting] = useState(false);
@@ -44,8 +46,28 @@ export default function ControlPage() {
       if (sc?.totals) setTotals(sc.totals);
     };
     load();
-    const id = setInterval(load, 3000); // Increased to 3s to reduce server load
-    return () => clearInterval(id);
+    
+    // Real-time WebSocket updates for instant sync
+    const refresh = () => load();
+    if (process.env.NODE_ENV === 'development') {
+      fetch('/api/socketio');
+      const socket: Socket = io({ path: '/api/socketio' });
+      socket.on('state:update', refresh);
+      socket.on('reveal', refresh);
+      socket.on('scores:update', refresh);
+      socket.on('audience:update', refresh);
+      return () => { socket.close(); };
+    } else {
+      const key = process.env.NEXT_PUBLIC_PUSHER_KEY as string;
+      const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string;
+      const pusher = new PusherClient(key, { cluster });
+      const channel = pusher.subscribe('show');
+      channel.bind('state:update', refresh);
+      channel.bind('reveal', refresh);
+      channel.bind('scores:update', refresh);
+      channel.bind('audience:update', refresh);
+      return () => { channel.unbind_all(); channel.unsubscribe(); pusher.disconnect(); };
+    }
   }, []);
 
   async function handleImport(e: React.FormEvent<HTMLFormElement>) {
@@ -85,10 +107,7 @@ export default function ControlPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ currentRound: Number(e.target.value) }),
               });
-              const s = await fetch("/api/state").then((r) => r.json());
-              setState(s);
-              const p = await fetch("/api/round2/preview").then((r) => r.json()).catch(()=>null);
-              setR2Preview(p);
+              // State will update via WebSocket automatically
             }}
           >
             <option value={0}>Pre-show</option>
@@ -141,9 +160,8 @@ export default function ControlPage() {
             onClick={async ()=>{
               if (!confirm('Reset show? This clears reveals, scores, audience, and state.')) return;
               await fetch('/api/admin/reset', { method: 'POST' });
-              const s = await fetch('/api/state').then(r=>r.json());
-              setState(s);
               setPendingAdjust({ R:0, G:0, B:0 });
+              // State will update via WebSocket automatically
             }}
           >Reset Show</button>
         </div>
@@ -249,8 +267,7 @@ export default function ControlPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ currentQuestionId: e.target.value || null }),
               });
-              const s = await fetch("/api/state").then((r) => r.json());
-              setState(s);
+              // State will update via WebSocket automatically
             }}
           >
             <option value="">-- none --</option>
@@ -295,8 +312,7 @@ export default function ControlPage() {
                           body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index, attribution }),
                         });
                       }
-                      const s = await fetch("/api/state").then((r) => r.json());
-                      setState(s);
+                      // State will update via WebSocket automatically
                     }}
                   >
                     <div className="text-xs opacity-60">#{a.index}</div>
@@ -317,8 +333,7 @@ export default function ControlPage() {
                     onClick={async () => {
                       setPendingAdjust((p) => ({ ...p, [t]: (p as any)[t] + 1000 } as any));
                       await fetch("/api/scores", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ team: t, amount: 1000, reason: "manual +" }) });
-                      const s = await fetch("/api/state").then((r) => r.json());
-                      setState(s);
+                      // State will update via WebSocket automatically
                     }}
                   >
                     +
@@ -328,8 +343,7 @@ export default function ControlPage() {
                     onClick={async () => {
                       setPendingAdjust((p) => ({ ...p, [t]: (p as any)[t] - 1000 } as any));
                       await fetch("/api/scores", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ team: t, amount: -1000, reason: "manual -" }) });
-                      const s = await fetch("/api/state").then((r) => r.json());
-                      setState(s);
+                      // State will update via WebSocket automatically
                     }}
                   >
                     -
@@ -348,10 +362,7 @@ export default function ControlPage() {
                   const res = await fetch("/api/round2/apply-bonus", { method: "POST" });
                   const json = await res.json();
                   setResult(JSON.stringify(json));
-                  const s = await fetch("/api/state").then((r) => r.json());
-                  setState(s);
-                  const p = await fetch("/api/round2/preview").then((r) => r.json());
-                  setR2Preview(p);
+                  // State will update via WebSocket automatically
                 }}
               >
                 Apply R2 Bonus

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { emitBus } from "@/lib/bus";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,10 @@ export async function POST() {
     }
     await tx.gameState.update({ where: { id: gs.id }, data: { round2BonusApplied: true } });
   });
+
+  // Emit WebSocket events for real-time updates
+  emitBus({ type: 'scores:update' });
+  emitBus({ type: 'state:update' });
 
   return NextResponse.json({ ok: true, applied: adjustments });
 }

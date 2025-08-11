@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { emitBus } from "@/lib/bus";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,6 +34,11 @@ export async function POST() {
     } else {
       await prisma.gameState.create({ data: { id: 1, ...defaults } });
     }
+
+    // Emit WebSocket events for complete refresh
+    emitBus({ type: 'state:update' });
+    emitBus({ type: 'scores:update' });
+    emitBus({ type: 'audience:update' });
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
