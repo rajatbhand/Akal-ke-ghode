@@ -29,8 +29,8 @@ export default function ControlPage() {
       
       const s = await fetch("/api/state").then((r) => r.json());
       setState(s);
-      const active = (s?.state?.activeTeam as 'R'|'G'|'B'|null) ?? 'Host';
-      setLocalActive(active === null ? 'Host' : active);
+      const activeTeam = s?.state?.activeTeam as 'R'|'G'|'B'|null;
+      setLocalActive(activeTeam === null ? 'Host' : activeTeam);
       setLocalBigX(s?.state?.bigX ?? false);
       setLocalScorecard(s?.state?.scorecardOverlay ?? false);
       
@@ -215,12 +215,22 @@ export default function ControlPage() {
                 key={t}
                 className={`px-3 py-2 rounded font-medium transition-all ${localActive === t ? "bg-black text-white" : "border hover:bg-gray-100"}`}
                 onClick={async ()=>{
+                  // Optimistic update - immediate UI feedback
                   setLocalActive(t as any);
-                  if (t !== 'Host') {
-                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: t }) });
-                  } else {
-                    // Set activeTeam to null for Host
-                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: null }) });
+                  
+                  try {
+                    if (t !== 'Host') {
+                      await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: t }) });
+                    } else {
+                      // Set activeTeam to null for Host
+                      await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: null }) });
+                    }
+                  } catch (error) {
+                    // Revert on error
+                    console.error('Failed to update active team:', error);
+                    const s = await fetch("/api/state").then((r) => r.json());
+                    const activeTeam = s?.state?.activeTeam as 'R'|'G'|'B'|null;
+                    setLocalActive(activeTeam === null ? 'Host' : activeTeam);
                   }
                 }}
               >{t}</button>

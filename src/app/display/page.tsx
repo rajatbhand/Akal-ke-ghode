@@ -25,9 +25,9 @@ export default function DisplayPage() {
           setTeams(json.teams);
         }
         const s = await fetch("/api/state", { cache: "no-store" }).then((r) => r.json());
-        // bump detection - only for team reveals, not Host/Neutral
+        // bump detection - only for new team reveals, not on general reloads
         const reveals = s?.question?.reveals ?? [];
-        if (reveals.length > prevRevealCount) {
+        if (reveals.length > prevRevealCount && prevRevealCount > 0) { // Only if we had previous data
           const last = reveals.reduce((a: any, b: any) => (new Date(a.createdAt) > new Date(b.createdAt) ? a : b));
           const ans = s.question.answers.find((a: any) => a.index === last.answerIndex);
           // Only show bump for actual team attributions (R, G, B) not Host/Neutral
@@ -39,8 +39,8 @@ export default function DisplayPage() {
         setPrevRevealCount(reveals.length);
         setState(s);
         
-        // Clear bump if Big X is showing to prevent interference
-        if (s?.state?.bigX) {
+        // Clear bump if Big X is showing or on general state updates to prevent interference
+        if (s?.state?.bigX || (reveals.length === prevRevealCount && prevRevealCount > 0)) {
           setBump(null);
         }
       } catch (error) {
