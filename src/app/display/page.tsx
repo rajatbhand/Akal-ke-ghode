@@ -101,18 +101,18 @@ export default function DisplayPage() {
       
       {state?.question ? (
         <div className="pt-20 sm:pt-4 pb-6 pr-0 sm:pr-80 min-h-screen flex flex-col">
-          {/* Question header - responsive with reduced gap */}
-          <div className="text-center mb-2 sm:mb-3 px-4 sm:px-6 lg:px-8">
-            <div className="bg-gray-800 border-4 border-purple-500 rounded-lg mx-auto max-w-5xl p-3 sm:p-4 lg:p-6 shadow-2xl">
-              <div className="text-purple-300 text-sm sm:text-base mb-1 tracking-wider">QUESTION</div>
+          {/* Question header - responsive with minimal gap */}
+          <div className="text-center mb-1 sm:mb-2 px-4 sm:px-6 lg:px-8">
+            <div className="bg-gray-800 border-4 border-purple-500 rounded-lg mx-auto max-w-5xl p-2 sm:p-3 lg:p-4 shadow-2xl">
+              <div className="text-purple-300 text-sm sm:text-base mb-0.5 tracking-wider">QUESTION</div>
               <div className="text-white text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black tracking-wide leading-tight">
                 {state.question.text}
               </div>
             </div>
           </div>
           
-          {/* Answer board - responsive design */}
-          <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+          {/* Answer board - responsive design with reduced top spacing */}
+          <div className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8 pt-2">
             <div className="w-full max-w-6xl">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                 {state.question.answers
