@@ -9,6 +9,8 @@ type Team = { id: "R" | "G" | "B"; name: string; colorHex: string; dugout: numbe
 export default function DisplayPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [state, setState] = useState<any>(null);
+  const [bump, setBump] = useState<{ team: 'R'|'G'|'B'|'Host'|'Neutral'; amount: number }|null>(null);
+  const [prevRevealCount, setPrevRevealCount] = useState<number>(0);
 
   useEffect(() => {
     const load = async () => {
@@ -16,6 +18,15 @@ export default function DisplayPage() {
       const json = await res.json();
       setTeams(json.teams);
       const s = await fetch("/api/state", { cache: "no-store" }).then((r) => r.json());
+      // bump detection
+      const reveals = s?.question?.reveals ?? [];
+      if (reveals.length > prevRevealCount) {
+        const last = reveals.reduce((a: any, b: any) => (new Date(a.createdAt) > new Date(b.createdAt) ? a : b));
+        const ans = s.question.answers.find((a: any) => a.index === last.answerIndex);
+        setBump({ team: last.attribution, amount: ans?.value ?? 0 });
+        setTimeout(() => setBump(null), 1200);
+      }
+      setPrevRevealCount(reveals.length);
       setState(s);
     };
     load();
@@ -97,6 +108,14 @@ export default function DisplayPage() {
           </div>
         </div>
       )}
+      {/* Score bump overlay */}
+      {bump && bump.amount > 0 && (bump.team === 'R' || bump.team === 'G' || bump.team === 'B') && (
+        <div className="fixed inset-0 z-40 pointer-events-none flex items-start justify-center pt-24">
+          <div className="text-5xl font-extrabold" style={{ color: TEAM_COLORS[bump.team] }}>
+            +{formatInr(bump.amount)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -132,18 +151,19 @@ function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
 
   return (
     <div className="p-4 flex gap-6 justify-center">
-      {teams.map((t) => (
-        <div key={t.id} className="flex items-center gap-3">
-          <div className="text-2xl font-bold" style={{ color: t.colorHex }}>
-            {t.name}
+      {teams.map((t) => {
+        const isActive = state?.state?.activeTeam === t.id;
+        return (
+          <div key={t.id} className={`flex items-center gap-3 px-3 py-1 rounded ${isActive ? 'ring-2 ring-yellow-400' : ''}`}>
+            <div className="text-2xl font-bold" style={{ color: t.colorHex }}>
+              {t.name}
+            </div>
+            <div className="px-3 py-1 rounded bg-white/10">Dugout: {t.dugout}</div>
+            <div className="px-3 py-1 rounded bg-white/10">{formatInr(t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B)}</div>
+            {isActive && <div className="px-2 py-1 bg-yellow-500 text-black rounded">Turn</div>}
           </div>
-          <div className="px-3 py-1 rounded bg-white/10">Dugout: {t.dugout}</div>
-          <div className="px-3 py-1 rounded bg-white/10">{formatInr(t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B)}</div>
-          {state?.state?.activeTeam === t.id && (
-            <div className="px-2 py-1 bg-yellow-500 text-black rounded">Turn</div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
