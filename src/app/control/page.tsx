@@ -134,7 +134,7 @@ export default function ControlPage() {
         <a className="underline" href="/api/sample-csv">Download sample CSV</a>
       </div>
 
-      <form onSubmit={handleImport} className="flex items-center gap-3">
+      <form onSubmit={handleImport} className="flex items-center gap-3" encType="multipart/form-data">
         <input name="file" type="file" accept=".csv,text/csv" className="border p-2" />
         <button disabled={importing} className="px-3 py-2 bg-black text-white rounded disabled:opacity-50">
           {importing ? "Importing…" : "Import Questions CSV"}
