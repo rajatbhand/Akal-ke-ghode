@@ -26,4 +26,23 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, reveal: r });
 }
 
+export async function DELETE(req: Request) {
+  const { questionId, answerIndex } = await req.json().catch(() => ({}));
+  if (!questionId || !answerIndex) {
+    return NextResponse.json({ error: "questionId, answerIndex required" }, { status: 400 });
+  }
+
+  // Delete reveal for this question and answer
+  await prisma.reveal.deleteMany({ 
+    where: { 
+      questionId, 
+      answerIndex 
+    } 
+  });
+  
+  emitBus({ type: 'reveal' });
+  emitBus({ type: 'scores:update' });
+  return NextResponse.json({ ok: true });
+}
+
 

@@ -71,61 +71,50 @@ export default function DisplayPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white font-bold">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white font-bold">
       {state?.state?.logoOnly && (
-        <div className="fixed inset-0 bg-gradient-to-b from-blue-900 to-blue-700 z-50 flex items-center justify-center">
-          <div className="text-6xl font-black text-yellow-400 tracking-wider animate-pulse">AKAL KE GHODE</div>
+        <div className="fixed inset-0 bg-gradient-to-b from-gray-900 to-gray-700 z-50 flex items-center justify-center">
+          <div className="text-6xl font-black text-purple-400 tracking-wider animate-pulse">AKAL KE GHODE</div>
         </div>
       )}
       
-      {/* Fixed Family Feud style scoreboard */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-500 border-b-4 border-yellow-600 shadow-lg">
+      {/* Fixed neutral scoreboard */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 border-b-4 border-purple-600 shadow-lg">
         <ScoreRail teams={teams} state={state} />
       </div>
       
       {state?.question ? (
         <div className="pt-20 pb-8">
-          {/* Question header with Family Feud styling */}
+          {/* Question header with neutral styling */}
           <div className="text-center mb-8 px-6">
-            <div className="bg-blue-700 border-4 border-yellow-400 rounded-lg mx-auto max-w-4xl p-6 shadow-2xl">
-              <div className="text-yellow-300 text-lg mb-2 tracking-wider">SURVEY SAYS...</div>
+            <div className="bg-gray-800 border-4 border-purple-500 rounded-lg mx-auto max-w-4xl p-6 shadow-2xl">
+              <div className="text-purple-300 text-lg mb-2 tracking-wider">QUESTION</div>
               <div className="text-white text-2xl md:text-3xl font-black tracking-wide leading-tight">
                 {state.question.text}
               </div>
             </div>
           </div>
           
-          {/* Family Feud style answer board */}
+          {/* Answer board with team-colored outlines */}
           <div className="max-w-6xl mx-auto px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {state.question.answers.map((a: any, idx: number) => {
+              {state.question.answers
+                .sort((a: any, b: any) => a.index - b.index) // Always display in Z-eye pattern order (1,2,3...)
+                .map((a: any, displayIndex: number) => {
                 const reveal = state.question.reveals?.find((r: any) => r.answerIndex === a.index);
                 const attributed = reveal?.attribution;
-                const teamColor = attributed && TEAM_COLORS[attributed] ? TEAM_COLORS[attributed] : "#6B7280";
+                const teamColor = attributed && TEAM_COLORS[attributed] ? TEAM_COLORS[attributed] : "#6B7280"; // grey for Host
                 const revealed = Boolean(reveal);
                 
                 return (
                   <div
                     key={a.index}
-                    className={`relative bg-blue-800 border-4 rounded-lg shadow-xl transition-all duration-500 ${
-                      revealed 
-                        ? "border-yellow-400 bg-gradient-to-r from-blue-700 to-blue-600" 
-                        : "border-blue-600 bg-blue-800/50"
-                    }`}
+                    className={`relative bg-gray-800 border-4 rounded-lg shadow-xl transition-all duration-500`}
                     style={{
                       minHeight: "80px",
-                      backgroundImage: revealed ? `linear-gradient(45deg, ${teamColor}22, transparent)` : undefined
+                      borderColor: revealed ? teamColor : "#4B5563" // team color outline when revealed, grey when hidden
                     }}
                   >
-                    {/* Answer number circle */}
-                    <div className={`absolute -left-3 -top-3 w-8 h-8 rounded-full border-3 flex items-center justify-center text-sm font-black ${
-                      revealed 
-                        ? "bg-yellow-400 border-yellow-600 text-blue-900" 
-                        : "bg-blue-600 border-blue-400 text-white"
-                    }`}>
-                      {a.index}
-                    </div>
-                    
                     <div className="p-4 flex justify-between items-center h-full">
                       <div className={`text-left flex-1 ${revealed ? "text-white" : "text-transparent"}`}>
                         <div className={`text-lg md:text-xl font-black tracking-wide ${revealed ? "" : "blur-sm select-none"}`}>
@@ -133,16 +122,16 @@ export default function DisplayPage() {
                         </div>
                       </div>
                       
-                      {/* Score display Family Feud style */}
+                      {/* Score display with neutral styling */}
                       <div className={`text-right ${revealed ? "opacity-100" : "opacity-0"}`}>
-                        <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full font-black text-lg border-2 border-yellow-600">
+                        <div className="bg-white text-black px-3 py-1 rounded-full font-black text-lg border-2 border-gray-300">
                           {revealed ? formatInr(a.value) : ""}
                         </div>
                       </div>
                     </div>
                     
-                    {/* Team attribution stripe */}
-                    {revealed && attributed && TEAM_COLORS[attributed] && (
+                    {/* Team attribution stripe at bottom */}
+                    {revealed && attributed && (
                       <div 
                         className="absolute bottom-0 left-0 right-0 h-2 rounded-b-md"
                         style={{ backgroundColor: teamColor }}
@@ -157,8 +146,8 @@ export default function DisplayPage() {
       ) : (
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <div className="text-6xl font-black text-yellow-400 mb-4 animate-pulse">AKAL KE GHODE</div>
-            <div className="text-2xl text-blue-200">Waiting for question...</div>
+            <div className="text-6xl font-black text-purple-400 mb-4 animate-pulse">AKAL KE GHODE</div>
+            <div className="text-2xl text-gray-300">Waiting for question...</div>
           </div>
         </div>
       )}
@@ -173,12 +162,12 @@ export default function DisplayPage() {
         </div>
       )}
       {state?.state?.scorecardOverlay && (
-        <div className="fixed inset-0 z-[999] bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center">
-          <div className="w-[90%] max-w-6xl bg-yellow-400 border-8 border-blue-900 rounded-xl p-8 shadow-2xl">
-            <div className="text-center text-4xl font-black text-blue-900 mb-6 tracking-wider">
+        <div className="fixed inset-0 z-[999] bg-gradient-to-b from-gray-900 via-gray-800 to-black flex items-center justify-center">
+          <div className="w-[90%] max-w-6xl bg-white border-8 border-purple-600 rounded-xl p-8 shadow-2xl">
+            <div className="text-center text-4xl font-black text-gray-900 mb-6 tracking-wider">
               📊 FINAL SCORECARD 📊
             </div>
-            <div className="bg-blue-900 rounded-lg p-4">
+            <div className="bg-gray-800 rounded-lg p-4">
               <ScoreRail teams={teams} state={state} />
             </div>
           </div>
@@ -194,7 +183,7 @@ export default function DisplayPage() {
             >
               +{formatInr(bump.amount)}
             </div>
-            <div className="absolute inset-0 bg-yellow-400 text-blue-900 text-6xl md:text-8xl font-black animate-ping opacity-50">
+            <div className="absolute inset-0 bg-white text-black text-6xl md:text-8xl font-black animate-ping opacity-50">
               +{formatInr(bump.amount)}
             </div>
           </div>
@@ -246,22 +235,22 @@ function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
         const teamScore = t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B;
         return (
           <div key={t.id} className={`relative flex items-center gap-3 px-4 py-2 ${isActive ? 'transform scale-105' : ''} transition-all duration-300`}>
-            {/* Family Feud style team display */}
-            <div className="bg-blue-900 border-3 border-yellow-400 rounded-lg px-4 py-2 shadow-lg">
+            {/* Neutral style team display */}
+            <div className="bg-gray-800 border-3 border-purple-500 rounded-lg px-4 py-2 shadow-lg">
               <div className="text-center">
                 <div className="text-lg font-black tracking-wider" style={{ color: t.colorHex }}>
                   {t.name.toUpperCase()}
                 </div>
                 <div className="flex gap-2 mt-1">
-                  <div className="bg-yellow-400 text-blue-900 px-2 py-1 rounded text-xs font-bold">
+                  <div className="bg-white text-black px-2 py-1 rounded text-xs font-bold">
                     Dugout: {t.dugout}
                   </div>
-                  <div className="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
+                  <div className="bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold">
                     {formatInr(teamScore)}
                   </div>
                 </div>
                 {isActive && (
-                  <div className="absolute -top-2 -right-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-black animate-pulse border-2 border-yellow-400">
+                  <div className="absolute -top-2 -right-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-black animate-pulse border-2 border-purple-400">
                     PLAYING
                   </div>
                 )}

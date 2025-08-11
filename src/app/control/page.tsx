@@ -98,24 +98,7 @@ export default function ControlPage() {
             <option value={4}>Final</option>
           </select>
 
-          <div className="ml-3 flex items-center gap-1">
-            <span className="text-sm opacity-70">Active</span>
-            {["R","G","B","Host"].map((t)=> (
-              <button
-                key={t}
-                className={`px-2 py-1 rounded ${localActive === t ? "bg-black text-white" : "border"}`}
-                onClick={async ()=>{
-                  setLocalActive(t as any);
-                  if (t !== 'Host') {
-                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: t }) });
-                  } else {
-                    // Set activeTeam to null for Host
-                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: null }) });
-                  }
-                }}
-              >{t}</button>
-            ))}
-          </div>
+
 
           <div className="ml-3 flex items-center gap-2">
             <label className="flex items-center gap-2">
@@ -222,6 +205,29 @@ export default function ControlPage() {
 
       <div className="border-t pt-6 space-y-3">
         <h2 className="text-lg font-semibold">Question & Reveal</h2>
+        
+        {/* Team Selection moved here */}
+        <div className="bg-gray-50 p-3 rounded border">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">Active Team:</span>
+            {["R","G","B","Host"].map((t)=> (
+              <button
+                key={t}
+                className={`px-3 py-2 rounded font-medium transition-all ${localActive === t ? "bg-black text-white" : "border hover:bg-gray-100"}`}
+                onClick={async ()=>{
+                  setLocalActive(t as any);
+                  if (t !== 'Host') {
+                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: t }) });
+                  } else {
+                    // Set activeTeam to null for Host
+                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activeTeam: null }) });
+                  }
+                }}
+              >{t}</button>
+            ))}
+          </div>
+        </div>
+        
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-sm">Select Question:</label>
           <select
@@ -257,15 +263,28 @@ export default function ControlPage() {
                 return (
                   <button
                     key={a.index}
-                    className={`p-2 border rounded text-left ${revealed ? "opacity-50" : ""}`}
-                    disabled={revealed}
+                    className={`p-2 border rounded text-left transition-all ${
+                      revealed 
+                        ? "bg-green-100 border-green-500 text-green-800" 
+                        : "hover:bg-gray-50"
+                    }`}
                     onClick={async () => {
-                      const attribution = localActive ?? (state?.state?.activeTeam ?? "Host");
-                      await fetch("/api/reveal", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index, attribution }),
-                      });
+                      if (revealed) {
+                        // Unreveals answer
+                        await fetch("/api/reveal", {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index }),
+                        });
+                      } else {
+                        // Reveal answer
+                        const attribution = localActive ?? (state?.state?.activeTeam ?? "Host");
+                        await fetch("/api/reveal", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ questionId: state.question.id, answerIndex: a.index, attribution }),
+                        });
+                      }
                       const s = await fetch("/api/state").then((r) => r.json());
                       setState(s);
                     }}
