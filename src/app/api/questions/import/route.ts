@@ -37,13 +37,35 @@ export async function POST(req: Request) {
     const colIndex = (name: string) => header.indexOf(name);
     const importedIds: string[] = [];
 
+    // Debug: Log all processing details
+    const processingLog: any[] = [];
+    const skippedRows: any[] = [];
+    
     // Avoid interactive transactions (PgBouncer/Serverless). Do per-question atomic ops.
     for (let i = 1; i < records.length; i++) {
       const row = records[i];
       const id = String(row[colIndex("QuestionID")] || "").trim();
       const text = String(row[colIndex("QuestionText")] || "").trim();
       const answerCount = parseInt(String(row[colIndex("AnswerCount")] || "0"), 10) || 0;
-      if (!id || !text || answerCount <= 0) continue;
+      
+      processingLog.push({
+        rowIndex: i,
+        id,
+        text: text.substring(0, 30) + '...',
+        answerCount,
+        valid: !!(id && text && answerCount > 0)
+      });
+      
+      if (!id || !text || answerCount <= 0) {
+        skippedRows.push({
+          rowIndex: i,
+          reason: !id ? 'No ID' : !text ? 'No text' : 'Invalid answer count',
+          id,
+          text: text.substring(0, 30),
+          answerCount
+        });
+        continue;
+      }
 
       await prisma.question.upsert({
         where: { id },
@@ -78,7 +100,12 @@ export async function POST(req: Request) {
       imported: importedIds.length, 
       ids: importedIds,
       verified: savedQuestions.length,
-      savedQuestions: savedQuestions.map(q => ({ id: q.id, text: q.text.substring(0, 50) + '...' }))
+      savedQuestions: savedQuestions.map(q => ({ id: q.id, text: q.text.substring(0, 50) + '...' })),
+      // DEBUG INFO
+      totalRows: records.length - 1, // exclude header
+      processingLog,
+      skippedRows,
+      csvHeaders: header
     });
   } catch (err: any) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 });

@@ -199,6 +199,16 @@ export default function ControlPage() {
       </div>
       <div className="flex gap-3 items-center">
         <a className="underline" href="/api/sample-csv">Download sample CSV</a>
+        <button 
+          className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+          onClick={async () => {
+            const res = await fetch("/api/questions");
+            const json = await res.json();
+            setResult(`🔍 Database Check: ${json.count} questions found\n${JSON.stringify(json.debug, null, 2)}`);
+          }}
+        >
+          Check Database
+        </button>
       </div>
 
       <form onSubmit={handleImport} className="flex items-center gap-3" encType="multipart/form-data">

@@ -8,7 +8,11 @@ export async function GET() {
     orderBy: { id: "asc" },
     include: { answers: { orderBy: { index: "asc" } } },
   });
-  return NextResponse.json({ questions });
+  return NextResponse.json({ 
+    questions,
+    count: questions.length,
+    debug: questions.map(q => ({ id: q.id, text: q.text.substring(0, 50), answerCount: q.answers.length }))
+  });
 }
 
 
