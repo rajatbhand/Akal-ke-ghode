@@ -71,34 +71,39 @@ export default function DisplayPage() {
   }, [prevRevealCount]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white font-bold">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white font-bold overflow-hidden">
       {state?.state?.logoOnly && (
         <div className="fixed inset-0 bg-gradient-to-b from-gray-900 to-gray-700 z-50 flex items-center justify-center">
-          <div className="text-6xl font-black text-purple-400 tracking-wider animate-pulse">AKAL KE GHODE</div>
+          <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-purple-400 tracking-wider animate-pulse">AKAL KE GHODE</div>
         </div>
       )}
       
-      {/* Fixed neutral scoreboard - optimized for 16:9 TV */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 border-b-4 border-purple-600 shadow-lg">
+      {/* Fixed bigger scoreboard - positioned on right side, responsive */}
+      <div className="fixed top-0 right-0 z-40 bg-gradient-to-b from-gray-800 via-gray-700 to-gray-800 border-l-4 border-b-4 border-purple-600 shadow-lg rounded-bl-lg hidden sm:block">
         <ScoreRail teams={teams} state={state} />
       </div>
       
+      {/* Mobile scoreboard - top center for small screens */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 border-b-4 border-purple-600 shadow-lg sm:hidden">
+        <ScoreRailMobile teams={teams} state={state} />
+      </div>
+      
       {state?.question ? (
-        <div className="pt-24 pb-6 min-h-screen flex flex-col">
-          {/* Question header - positioned for 16:9 TV */}
-          <div className="text-center mb-6 px-8">
-            <div className="bg-gray-800 border-4 border-purple-500 rounded-lg mx-auto max-w-5xl p-4 shadow-2xl">
-              <div className="text-purple-300 text-base mb-1 tracking-wider">QUESTION</div>
-              <div className="text-white text-xl md:text-2xl font-black tracking-wide leading-tight">
+        <div className="pt-20 sm:pt-4 pb-6 pr-0 sm:pr-80 min-h-screen flex flex-col">
+          {/* Question header - responsive */}
+          <div className="text-center mb-4 sm:mb-6 px-4 sm:px-6 lg:px-8">
+            <div className="bg-gray-800 border-4 border-purple-500 rounded-lg mx-auto max-w-5xl p-3 sm:p-4 lg:p-6 shadow-2xl">
+              <div className="text-purple-300 text-sm sm:text-base mb-1 tracking-wider">QUESTION</div>
+              <div className="text-white text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black tracking-wide leading-tight">
                 {state.question.text}
               </div>
             </div>
           </div>
           
-          {/* Answer board - optimized for 16:9 TV display */}
-          <div className="flex-1 flex items-center justify-center px-8">
-            <div className="w-full max-w-7xl">
-              <div className="grid grid-cols-2 gap-4">
+          {/* Answer board - responsive design */}
+          <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-6xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                 {state.question.answers
                   .sort((a: any, b: any) => a.index - b.index) // Always display in Z-eye pattern order (1,2,3...)
                   .map((a: any, displayIndex: number) => {
@@ -112,20 +117,20 @@ export default function DisplayPage() {
                       key={a.index}
                       className={`relative bg-gray-800 border-4 rounded-lg shadow-xl transition-all duration-500`}
                       style={{
-                        minHeight: "100px",
+                        minHeight: "80px",
                         borderColor: revealed ? teamColor : "#4B5563" // team color outline when revealed, grey when hidden
                       }}
                     >
-                      <div className="p-6 flex justify-between items-center h-full">
+                      <div className="p-3 sm:p-4 lg:p-6 flex justify-between items-center h-full">
                         <div className={`text-left flex-1 ${revealed ? "text-white" : "text-transparent"}`}>
-                          <div className={`text-lg md:text-xl font-black tracking-wide ${revealed ? "" : "blur-sm select-none"}`}>
+                          <div className={`text-sm sm:text-base lg:text-lg xl:text-xl font-black tracking-wide ${revealed ? "" : "blur-sm select-none"}`}>
                             {revealed ? a.text.toUpperCase() : "████████████"}
                           </div>
                         </div>
                         
-                        {/* Score display with neutral styling - larger for TV */}
+                        {/* Score display with neutral styling - responsive */}
                         <div className={`text-right ${revealed ? "opacity-100" : "opacity-0"}`}>
-                          <div className="bg-white text-black px-4 py-2 rounded-full font-black text-xl border-2 border-gray-300">
+                          <div className="bg-white text-black px-2 sm:px-3 lg:px-4 py-1 sm:py-2 rounded-full font-black text-sm sm:text-base lg:text-lg xl:text-xl border-2 border-gray-300">
                             {revealed ? formatInr(a.value) : ""}
                           </div>
                         </div>
@@ -146,10 +151,10 @@ export default function DisplayPage() {
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="text-6xl font-black text-purple-400 mb-4 animate-pulse">AKAL KE GHODE</div>
-            <div className="text-2xl text-gray-300">Waiting for question...</div>
+        <div className="flex items-center justify-center h-screen pr-0 sm:pr-80">
+          <div className="text-center px-4">
+            <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-purple-400 mb-4 animate-pulse">AKAL KE GHODE</div>
+            <div className="text-lg sm:text-xl lg:text-2xl text-gray-300">Waiting for question...</div>
           </div>
         </div>
       )}
@@ -231,29 +236,101 @@ function ScoreRail({ teams, state }: { teams: Team[]; state: any }) {
   }, []);
 
   return (
-    <div className="p-3 flex gap-6 justify-center flex-wrap">
+    <div className="p-4 flex flex-col gap-4 min-w-[300px]">
       {teams.map((t) => {
         const isActive = state?.state?.activeTeam === t.id;
         const teamScore = t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B;
         return (
-          <div key={t.id} className={`relative flex items-center gap-3 px-4 py-2 ${isActive ? 'transform scale-105' : ''} transition-all duration-300`}>
-            {/* Neutral style team display */}
-            <div className="bg-gray-800 border-3 border-purple-500 rounded-lg px-4 py-2 shadow-lg">
-              <div className="text-center">
-                <div className="text-lg font-black tracking-wider" style={{ color: t.colorHex }}>
-                  {t.name.toUpperCase()}
-                </div>
-                <div className="flex gap-2 mt-1">
-                  <div className="bg-white text-black px-2 py-1 rounded text-xs font-bold">
-                    Dugout: {t.dugout}
+          <div key={t.id} className={`relative ${isActive ? 'transform scale-105' : ''} transition-all duration-300`}>
+            {/* Bigger horizontal team display */}
+            <div className="bg-gray-800 border-3 border-purple-500 rounded-lg px-6 py-4 shadow-lg">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="text-xl font-black tracking-wider mb-2" style={{ color: t.colorHex }}>
+                    {t.name.toUpperCase()}
                   </div>
-                  <div className="bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold">
-                    {formatInr(teamScore)}
+                  <div className="flex gap-3">
+                    <div className="bg-white text-black px-3 py-1 rounded text-sm font-bold">
+                      Dugout: {t.dugout}
+                    </div>
+                    <div className="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold">
+                      {formatInr(teamScore)}
+                    </div>
                   </div>
                 </div>
                 {isActive && (
-                  <div className="absolute -top-2 -right-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-black animate-pulse border-2 border-purple-400">
+                  <div className="bg-red-600 text-white px-3 py-2 rounded-full text-sm font-black animate-pulse border-2 border-purple-400">
                     PLAYING
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ScoreRailMobile({ teams, state }: { teams: Team[]; state: any }) {
+  const [totals, setTotals] = useState<{ R: number; G: number; B: number }>({ R: 0, G: 0, B: 0 });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const json = await fetch('/api/scores', { cache: 'no-store' }).then(r=>r.json());
+        if (json.totals) {
+          setTotals(json.totals);
+        }
+      } catch (error) {
+        console.error('Failed to load scores:', error);
+      }
+    };
+    load();
+    const refresh = () => load();
+    if (process.env.NODE_ENV === 'development') {
+      fetch('/api/socketio');
+      const socket: Socket = io({ path: '/api/socketio' });
+      socket.on('reveal', refresh);
+      socket.on('scores:update', refresh);
+      socket.on('audience:update', refresh);
+      return () => { socket.close(); };
+    } else {
+      const key = process.env.NEXT_PUBLIC_PUSHER_KEY as string;
+      const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string;
+      const pusher = new PusherClient(key, { cluster });
+      const channel = pusher.subscribe('show');
+      channel.bind('reveal', refresh);
+      channel.bind('scores:update', refresh);
+      channel.bind('audience:update', refresh);
+      return () => { channel.unbind_all(); channel.unsubscribe(); pusher.disconnect(); };
+    }
+  }, []);
+
+  return (
+    <div className="p-2 flex gap-1 justify-center overflow-x-auto">
+      {teams.map((t) => {
+        const isActive = state?.state?.activeTeam === t.id;
+        const teamScore = t.id === 'R' ? totals.R : t.id === 'G' ? totals.G : totals.B;
+        return (
+          <div key={t.id} className={`relative flex-shrink-0 ${isActive ? 'transform scale-105' : ''} transition-all duration-300`}>
+            {/* Compact mobile team display */}
+            <div className="bg-gray-800 border-2 border-purple-500 rounded-lg px-2 py-1 shadow-lg">
+              <div className="text-center">
+                <div className="text-xs font-black tracking-wide" style={{ color: t.colorHex }}>
+                  {t.id}
+                </div>
+                <div className="flex gap-1 mt-1">
+                  <div className="bg-white text-black px-1 py-0.5 rounded text-xs font-bold">
+                    {t.dugout}
+                  </div>
+                  <div className="bg-purple-600 text-white px-1 py-0.5 rounded text-xs font-bold">
+                    ₹{Math.round(teamScore/1000)}k
+                  </div>
+                </div>
+                {isActive && (
+                  <div className="absolute -top-1 -right-1 bg-red-600 text-white px-1 py-0.5 rounded-full text-xs font-black animate-pulse">
+                    •
                   </div>
                 )}
               </div>
